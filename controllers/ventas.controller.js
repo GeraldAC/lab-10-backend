@@ -1,42 +1,64 @@
-const Ventas = require('../models/ventas.model');
+const ventaRepository = require('../models/ventas.model');
 
-exports.getAllVentas = (req, res) => {
-  Ventas.getAll((err, results) => {
-    if (err) return res.status(500).json({ error: err });
-    res.json(results);
-  });
-};
+class VentaController {
+  constructor(repository) {
+    this.repository = repository;
+  }
 
-exports.getVentaById = (req, res) => {
-  const id = req.params.id;
-  Ventas.getById(id, (err, result) => {
-    if (err) return res.status(500).json({ error: err });
-    if (result.length === 0) return res.status(404).json({ message: 'Venta no encontrada' });
-    res.json(result[0]);
-  });
-};
+  async getAllVentas(req, res) {
+    try {
+      const ventas = await this.repository.getAll();
+      res.json(ventas);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
 
-exports.createVenta = (req, res) => {
-  const nuevaVenta = req.body;
-  Ventas.create(nuevaVenta, (err, result) => {
-    if (err) return res.status(500).json({ error: err });
-    res.status(201).json({ id: result.insertId, ...nuevaVenta });
-  });
-};
+  async getVentaById(req, res) {
+    try {
+      const id = req.params.id;
+      const venta = await this.repository.getById(id);
+      
+      if (!venta) {
+        return res.status(404).json({ message: 'Venta no encontrada' });
+      }
+      
+      res.json(venta);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
 
-exports.updateVenta = (req, res) => {
-  const id = req.params.id;
-  const venta = req.body;
-  Ventas.update(id, venta, (err) => {
-    if (err) return res.status(500).json({ error: err });
-    res.json({ message: 'Venta actualizada correctamente' });
-  });
-};
+  async createVenta(req, res) {
+    try {
+      const nuevaVenta = req.body;
+      const ventaCreada = await this.repository.create(nuevaVenta);
+      res.status(201).json(ventaCreada);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
 
-exports.deleteVenta = (req, res) => {
-  const id = req.params.id;
-  Ventas.delete(id, (err) => {
-    if (err) return res.status(500).json({ error: err });
-    res.json({ message: 'Venta eliminada correctamente' });
-  });
-};
+  async updateVenta(req, res) {
+    try {
+      const id = req.params.id;
+      const venta = req.body;
+      const ventaActualizada = await this.repository.update(id, venta);
+      res.json(ventaActualizada);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  async deleteVenta(req, res) {
+    try {
+      const id = req.params.id;
+      await this.repository.delete(id);
+      res.json({ message: 'Venta eliminada correctamente' });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+}
+
+module.exports = new VentaController(ventaRepository);
